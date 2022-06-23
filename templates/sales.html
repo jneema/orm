@@ -75,9 +75,9 @@
                 <tbody>
                   <tr>
                     {% for sale in sales %}
-                    <td>{{sale.id}}</td>
-                    <td>{{sale.quantity}}</td>
-                    <td>{{Profit}}</td>
+                    <td>{{sale[0]}}</td>
+                    <td>{{sale[1]}}</td>
+                    <td>{{sale[2]}}</td>
                   
                     </tr>
                     {% endfor %}

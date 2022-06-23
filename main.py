@@ -2,11 +2,15 @@ from flask import Flask, redirect, render_template, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, date, time
 from sqlalchemy import  func, extract, DateTime
+from flask_login import LoginManager
+
 
 
 from configs.base_config import Config ,Development, Testing, Production
 
 app = Flask(__name__)
+login_manager = LoginManager()
+
 app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://postgres:nyanumba@127.0.0.1:5433/duka"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config.from_object(Production) 
@@ -63,18 +67,19 @@ def sales(x):
     # db.session.query(Folder, File)
     # .join(File, Folder.id == File.folder_id)
     # .all()
-    db.session.query(Products.name, db.func.sum(Sales.quantity).label("Quantity"),db.func.sum((Products.sp-Products.bp)*Sales.quantity).label("Profit")).join(Sales, Products.id == Sales.product_id).group_by(Products.name).filter(Products.id==x).all()
+    r = db.session.query(Products.name, db.func.sum(Sales.quantity).label("Quantity"),db.func.sum((Products.sp-Products.bp)*Sales.quantity).label("Profit")).join(Sales, Products.id == Sales.product_id).group_by(Products.name).filter(Products.id==x).all()
     
-    sales = Sales.query.all()
-
-    return render_template('sales.html', sales = sales)
+    # sales = Sales.query.all()
+    return render_template('sales.html', sales = r)
 
 @app.route('/sales')
 def total_sales():
-    db.session.query(Products.name, db.func.sum(Sales.quantity).label("Quantity"),db.func.sum((Products.sp-Products.bp)*Sales.quantity).label("Profit")).join(Sales, Products.id == Sales.product_id).group_by(Products.name).all()
-    
-    # print(list_sales)
-    return render_template('sales.html')
+    r = db.session.query(Products.name, db.func.sum(Sales.quantity).label("Quantity"),db.func.sum((Products.sp-Products.bp)*Sales.quantity).label("Profit")).join(Sales, Products.id == Sales.product_id).group_by(Products.name).all()
+    for result in r:
+        print(' Name:', result[0], 'Quantity:', result[1], 'Profit:', result[2])
+    # # print(list_sales)
+    # sales = Sales.query.all()
+    return render_template('sales.html', sales = r)
         
 @app.route('/makesale', methods = ['POST'])
 def makesale():
