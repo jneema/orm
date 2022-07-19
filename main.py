@@ -111,7 +111,6 @@ class LoginForm(FlaskForm):
 
     submit = SubmitField('Login')
 
-db.create_all()
 
 
 @app.route('/')
