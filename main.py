@@ -126,14 +126,14 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         # check if user exists in the db
-        user = User.query.filter_by(username=form.username.data).first()
+        User = User.query.filter_by(username=form.username.data).first()
 
         # if the user exists check their password
-        if user:
+        if User:
             # bcrypt will check the users password and form password to see if they match
             if flask_bcrypt.check_password_hash(User.password, form.password.data):
                 # if the passwords match then login the user
-                login_user(user)
+                login_user(User)
                 return redirect(url_for('base'))
     return render_template('login.html', form=form)      
 
