@@ -24,10 +24,6 @@ app.config.from_object(Production)
 flask_bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
 
-@app.before_first_request
-def create_tables():
-    db.create_all()
-    db.session.commit()
 
 pw_hash = flask_bcrypt.generate_password_hash('form.user.password').decode('utf-8')
 flask_bcrypt.check_password_hash(pw_hash, 'form.user.password') # returns True
@@ -115,6 +111,7 @@ class LoginForm(FlaskForm):
 
     submit = SubmitField('Login')
 
+db.create_all()
 
 
 @app.route('/')
@@ -130,14 +127,14 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         # check if user exists in the db
-        User = User.query.filter_by(username=form.username.data).first()
+        user = User.query.filter_by(username=form.username.data).first()
 
         # if the user exists check their password
-        if User:
+        if user:
             # bcrypt will check the users password and form password to see if they match
-            if flask_bcrypt.check_password_hash(User.password, form.password.data):
+            if flask_bcrypt.check_password_hash(user.password, form.password.data):
                 # if the passwords match then login the user
-                login_user(User)
+                login_user(user)
                 return redirect(url_for('base'))
     return render_template('login.html', form=form)      
 
