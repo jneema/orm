@@ -24,6 +24,10 @@ app.config.from_object(Production)
 flask_bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
 
+@app.before_first_request
+def create_tables():
+    db.create_all()
+    db.session.commit()
 
 pw_hash = flask_bcrypt.generate_password_hash('form.user.password').decode('utf-8')
 flask_bcrypt.check_password_hash(pw_hash, 'form.user.password') # returns True
