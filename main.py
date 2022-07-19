@@ -1,16 +1,16 @@
 from flask import Flask, redirect, render_template, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, date, time
-from sqlalchemy import  func, extract
+from sqlalchemy import  func, extract, DateTime
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, EmailField
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, EmailField
 from wtforms.validators import ValidationError, DataRequired, InputRequired, Length, Email, EqualTo
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
 
 
 
-from configs.base_config import Development, Production
+from configs.base_config import Config ,Development, Testing, Production
 
 
 
