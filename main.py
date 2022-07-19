@@ -2,21 +2,49 @@ from flask import Flask, redirect, render_template, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, date, time
 from sqlalchemy import  func, extract, DateTime
-from flask_login import LoginManager
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, EmailField
+from wtforms.validators import ValidationError, DataRequired, InputRequired, Length, Email, EqualTo
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
+from flask_bcrypt import Bcrypt
 
 
 
 from configs.base_config import Config ,Development, Testing, Production
 
-app = Flask(__name__)
-login_manager = LoginManager()
 
-app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://postgres:nyanumba@127.0.0.1:5433/duka"
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app = Flask(__name__)
+
+app.config['SECRET_KEY']='LongAndRandomSecretKey'
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://wqsvbcbvszvkxi:de81e26baa5b0b4a8d7ec3ec0cbc0e9617d8a8e9a20cc9c62de166118ab6945a@ec2-54-76-43-89.eu-west-1.compute.amazonaws.com:5432/dccs4uikrqga4a"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'False'
 app.config.from_object(Production) 
 
-
+flask_bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
+
+
+pw_hash = flask_bcrypt.generate_password_hash('form.user.password').decode('utf-8')
+flask_bcrypt.check_password_hash(pw_hash, 'form.user.password') # returns True
+
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+class User(UserMixin, db.Model):
+    __tablename__ = "user"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(300), nullable=False, unique=True)
+
 class Products(db.Model):
     __tablename__ = 'products'
     id = db.Column(db.Integer, primary_key=True, autoincrement = True, nullable=False)
@@ -35,11 +63,98 @@ class Sales(db.Model):
    
     product = db.relationship('Products', backref=db.backref('sales', lazy=True))
 
+class SignUp(FlaskForm):
+    username = StringField(label=('Enter Username:'),
+    validators=[DataRequired(), Length(max=64)])
+    # message='Name length should be %(min)d and %(max)dcharacters'
+    email = StringField(label=('Email'), 
+        validators=[DataRequired(), 
+        Email(), 
+        Length(max=120)])
+    password = PasswordField(label=('Password'), 
+        validators=[DataRequired(), 
+        Length(min=8, message='Password should be at least %(min)d characters long')])
+    confirm_password = PasswordField(
+        label=('Confirm Password'), 
+        validators=[DataRequired(message='*Required'),
+        EqualTo('password', message='Both password fields must be equal!')])
+
+
+    submit = SubmitField(label=('Submit'))
+
+    def validate_username(self, username):
+        excluded_chars = " *?!'^+%&/()=}][{$#1234567890"
+        existing_user_username = User.query.filter_by(
+            username=username.data).first() 
+        if existing_user_username:
+            raise ValidationError(
+                'That username already exists. Please choose a different one.')
+        for char in self.username.data:
+            if char in excluded_chars:
+                raise ValidationError(
+                    f"Character {char} is not allowed in username.")
+    def validate_email(self, email):
+        existing_user_email = User.query.filter_by(
+                email=email.data).first()
+        if existing_user_email:
+            raise ValidationError(
+                'That email already exists. Please choose a different one.')   
+
+
+class LoginForm(FlaskForm):
+    username = StringField(validators=[InputRequired(), Length(min=2,max=20)],
+    render_kw={"placeholder": "Username"})
+    email = EmailField(validators=[InputRequired()],
+    render_kw={"placeholder":"Enter Email"})
+    password = PasswordField(validators=[InputRequired(), Length(min=8, max=20)], 
+    render_kw={"placeholder": "Password"})
+
+    submit = SubmitField('Login')
+
 
 
 @app.route('/')
 def home():
     return render_template('index.html')
+
+
+@app.route('/home')
+def base():
+    return render_template('base.html')
+@app.route('/login', methods=('GET', 'POST'))
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        # check if user exists in the db
+        user = User.query.filter_by(username=form.username.data).first()
+
+        # if the user exists check their password
+        if user:
+            # bcrypt will check the users password and form password to see if they match
+            if flask_bcrypt.check_password_hash(user.password, form.password.data):
+                # if the passwords match then login the user
+                login_user(user)
+                return redirect(url_for('base'))
+    return render_template('login.html', form=form)      
+
+
+@app.route('/logout', methods = ['GET', 'POST'])
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+
+@app.route('/signup', methods=['GET','POST'])
+def signup():
+    form = SignUp()
+
+    if form.validate_on_submit():
+        hashed_password = flask_bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        new_user = User(username=form.username.data, email=form.email.data, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for('login'))
+    return render_template('signup.html', form=form)    
 
 @app.route('/inventories', methods=['GET', 'POST'])
 def inventories():
@@ -137,13 +252,69 @@ def dashboard():
     # join products as pr on pr.id=sl.product_id  group by sl.created_at order by sl.created_at ASC")
 
     # print(x)
-    labels = []
-    data = []
-    for i in data:
-        labels.append(i[0])
-        data.append(int(i[1]))
-        print(data,labels)
-    return render_template('dashboard.html', labels= labels, data = data)
+
+    spm = Sales.query.with_entities(func.sum(Sales.quantity * Products.sp), extract('month',Sales.created_at)).join(Products).group_by( extract('month',Sales.created_at)) 
+    #convert spm to how chartjs expects
+    monthspm=[]
+    dataspm=[]
+    for x in spm :
+        monthspm.append(x[1])
+        dataspm.append(int(x[0]))
+    print("dataspm" ,dataspm )
+
+    # cur.execute(" SELECT sum(s.quantity * p.sp) AS sales, p.name FROM sales s JOIN products p ON p.id = s.product_id GROUP BY p.name ;")
+    sbp = Sales.query.with_entities(func.sum(Sales.quantity * Products.sp), Products.name).join(Products).group_by(Products.name ).order_by(func.sum(Sales.quantity * Products.sp))
+    
+    namesbp=[]
+    salesbp=[]
+    for x in sbp:
+        namesbp.append(x[1])
+        salesbp.append(float(x[0])) 
+    print(salesbp) 
+  
+#   cur.execute("SELECT sum(s.quantity * p.sp) AS sales,DATE(created_at) AS today FROM sales s JOIN products p ON p.id = s.product_id WHERE DATE(created_at) = current_date GROUP BY today;")
+    ds =  Sales.query.with_entities(func.sum(Sales.quantity * Products.sp),func.date(Sales.created_at)).join(Products).filter(func.date(Sales.created_at) == date.today()).group_by(func.date(Sales.created_at)) 
+                
+    dailys = 0
+    today = []
+    for i in ds:
+        dailys=(float(i[0]))
+        today=(i[1])
+    print(dailys)
+    
+#   monthly sales
+    ms = Sales.query.with_entities(func.sum(Sales.quantity * Products.sp),extract('month',Sales.created_at)).join(Products).filter(extract('month',Sales.created_at) == date.today().month).group_by(extract('month',Sales.created_at)) 
+    monthsales = 0
+    thismonth = []
+    for i in ms:
+        monthsales=(float(i[0]))
+        thismonth=(i[1])
+    print(monthsales)
+
+    #   profit per month   
+#   cur.execute("SELECT sum(p.sp - p.bp) AS profit,extract(month from s.created_at) AS monthly FROM sales s JOIN products p ON p.id = s.product_id GROUP BY monthly ORDER BY monthly ;")
+
+    
+#   cur.execute('SELECT p.name,sum(s.quantity) AS most_sold FROM sales s JOIN products p ON p.id = s.product_id GROUP BY p.name ORDER BY (sum(s.quantity)) DESC LIMIT 5;')
+    prod=[]
+    data5=[]
+    top5 = Sales.query.with_entities(Products.name, func.sum(Sales.quantity)).join(Products ).group_by(Products.name ).order_by(func.sum(Sales.quantity)).limit(5) 
+    
+    for i in top5:
+        prod.append(i[0])
+        data5.append(int(i[1]))
+    print(data5)
+        
+
+    # labels = []
+    # data = []
+    # for i in data:
+    #     labels.append(i[0])
+    #     data.append(int(i[1]))
+    #     print(data,labels)
+    #     db.session.query(Products.name, db.func.sum(Sales.quantity).label("Quantity"),db.func.sum((Products.sp-Products.bp)*Sales.quantity).label("Profit")).filter(extract('year' 'month' 'day' , Sales).label("Date")).join(Sales, Products.id == Sales.product_id).group_by(Products.name).all()
+
+    return render_template('dashboard.html',prod=prod,data5=data5,dailys = dailys,today=today,monthspm=monthspm,dataspm=dataspm,namesbp=namesbp,salesbp= salesbp,monthsales=monthsales,thismonth=thismonth)
 
 
 
