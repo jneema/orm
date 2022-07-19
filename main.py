@@ -41,17 +41,17 @@ class User(UserMixin, db.Model):
     __tablename__ = "user"
     
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    username = db.Column(db.String(80), unique=False, nullable=False)
+    email = db.Column(db.String(120), unique=False, nullable=False)
     password = db.Column(db.String(300), nullable=False, unique=True)
 
 class Products(db.Model):
     __tablename__ = 'products'
     id = db.Column(db.Integer, primary_key=True, autoincrement = True, nullable=False)
     name = db.Column(db.String(80), unique=True)
-    bp = db.Column(db.Numeric(15), unique=True)
-    sp = db.Column(db.Numeric(15), unique=True)
-    serial_no = db.Column(db.Integer, unique=True)
+    bp = db.Column(db.Numeric(15), unique=False)
+    sp = db.Column(db.Numeric(15), unique=False)
+    serial_no = db.Column(db.Integer, unique=False)
 
 class Sales(db.Model):
     __tablename__ = 'sales'
