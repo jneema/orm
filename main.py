@@ -131,7 +131,7 @@ def login():
         # if the user exists check their password
         if user:
             # bcrypt will check the users password and form password to see if they match
-            if flask_bcrypt.check_password_hash(user.password, form.password.data):
+            if flask_bcrypt.check_password_hash(User.password, form.password.data):
                 # if the passwords match then login the user
                 login_user(user)
                 return redirect(url_for('base'))
