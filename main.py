@@ -10,7 +10,7 @@ from flask_bcrypt import Bcrypt
 
 
 
-from configs.base_config import Config ,Development, Testing, Production
+from configs.base_config import Base, Development, Staging, Production
 
 
 
