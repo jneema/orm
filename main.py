@@ -84,8 +84,7 @@ class SignUp(FlaskForm):
 
     def validate_username(self, username):
         excluded_chars = " *?!'^+%&/()=}][{$#1234567890"
-        existing_user_username = User.query.filter_by(
-            username=username.data).first() 
+        existing_user_username = User.query.filter_by(username=username.data).first() 
         if existing_user_username:
             raise ValidationError(
                 'That username already exists. Please choose a different one.')
