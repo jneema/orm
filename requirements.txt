@@ -6,7 +6,6 @@ cffi==1.15.0
 chardet==4.0.0
 click==8.0.1
 colorama==0.4.4
-command-not-found==0.3
 cryptography==3.4.8
 cupshelpers==1.0
 dblatex==0.3.12
