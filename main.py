@@ -22,10 +22,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://wqsvbcbvszvkxi:de81e26baa5
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'False'
 app.config.from_object(Production) 
 
-csrf = CSRFProtect(app)
 flask_bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
-
+csrf = CSRFProtect(app)
+csrf.init_app(app)
 
 pw_hash = flask_bcrypt.generate_password_hash('form.user.password').decode('utf-8')
 flask_bcrypt.check_password_hash(pw_hash, 'form.user.password') # returns True
