@@ -7,6 +7,7 @@ from wtforms import StringField, SubmitField, PasswordField, BooleanField, Email
 from wtforms.validators import ValidationError, DataRequired, InputRequired, Length, Email, EqualTo
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
+from flask_wtf.csrf import CSRFProtect
 
 
 
@@ -21,6 +22,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://wqsvbcbvszvkxi:de81e26baa5
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'False'
 app.config.from_object(Production) 
 
+csrf = CSRFProtect(app)
 flask_bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
 
