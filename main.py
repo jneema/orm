@@ -7,7 +7,6 @@ from wtforms import StringField, SubmitField, PasswordField, BooleanField, Email
 from wtforms.validators import ValidationError, DataRequired, InputRequired, Length, Email, EqualTo
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
-from flask_wtf.csrf import CSRFProtect
 
 
 
@@ -24,8 +23,7 @@ app.config.from_object(Production)
 
 flask_bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
-csrf = CSRFProtect(app)
-csrf.init_app(app)
+
 
 pw_hash = flask_bcrypt.generate_password_hash('form.user.password').decode('utf-8')
 flask_bcrypt.check_password_hash(pw_hash, 'form.user.password') # returns True
