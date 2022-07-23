@@ -38,7 +38,7 @@
         {{ ', '.join(errors) }}
         {% endfor %}
         <form  class="form-horizontal" method="POST" action="">
-            <!-- {{ form.csrf_token() }} -->
+            {{ form.csrf_token() }}
             <div style="margin-bottom: 15px;" class="form-group">
                 {{ form.username.label }}
                 {{ form.username(class="form-control") }}
