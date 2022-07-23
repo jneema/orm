@@ -122,7 +122,7 @@ def base():
     return render_template('base.html')
 @app.route('/login', methods=('GET', 'POST'))
 def login():
-    form = LoginForm()
+    form = LoginForm(meta={'csrf': False})
     if form.validate_on_submit():
         # check if user exists in the db
         user = User.query.filter_by(username=form.username.data).first()
@@ -145,7 +145,7 @@ def logout():
 
 @app.route('/signup', methods=['GET','POST'])
 def signup():
-    form = SignUp()
+    form = SignUp(meta={'csrf': False})
 
     if form.validate_on_submit():
         hashed_password = flask_bcrypt.generate_password_hash(form.password.data).decode('utf-8')
