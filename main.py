@@ -17,7 +17,7 @@ from configs.base_config import Base, Development, Staging, Production
 app = Flask(__name__)
 
 app.config['SECRET_KEY']='LongAndRandomSecretKey'
-app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://wqsvbcbvszvkxi:de81e26baa5b0b4a8d7ec3ec0cbc0e9617d8a8e9a20cc9c62de166118ab6945a@ec2-54-76-43-89.eu-west-1.compute.amazonaws.com:5432/dccs4uikrqga4a"
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgres://lylpljbvxtrpdx:4d231feb3afb408f2d91867b32eefd742452f0f36e8e6c2a7d8d23a78ac70843@ec2-52-19-188-149.eu-west-1.compute.amazonaws.com:5432/d4cv0sq2p0h1m9"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'False'
 app.config.from_object(Production) 
 
@@ -38,7 +38,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 class User(UserMixin, db.Model):
-    __tablename__ = "user"
+    __tablename__ = "users"
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=False, nullable=False)
@@ -188,7 +188,9 @@ def sales(x):
 
 @app.route('/sales')
 def total_sales():
-    r = db.session.query(Products.name, db.func.sum(Sales.quantity).label("Quantity"),db.func.sum((Products.sp-Products.bp)*Sales.quantity).label("Profit")).join(Sales, Products.id == Sales.product_id).group_by(Products.name).all()
+    r = db.session.query(Products.name, db.func.sum(Sales.quantity).
+    label("Quantity"),db.func.sum((Products.sp-Products.bp)*Sales.quantity).
+    label("Profit")).join(Sales, Products.id == Sales.product_id).group_by(Products.name).all()
     for result in r:
         print(' Name:', result[0], 'Quantity:', result[1], 'Profit:', result[2])
     # # print(list_sales)
@@ -242,7 +244,9 @@ def delete_item():
     db.session.delete(row)
     db.session.commit()
 
-    return redirect('/inventory')    
+    return redirect('/inventory')  
+    
+      
 
 @app.route('/dashboard')
 def dashboard():
