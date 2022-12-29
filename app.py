@@ -12,7 +12,7 @@ from flask_bcrypt import Bcrypt
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'LongAndRandomSecretKey'
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///orm.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:12345@localhost:5432/api"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'False'
 
 flask_bcrypt = Bcrypt(app)
